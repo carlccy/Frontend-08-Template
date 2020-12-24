@@ -1,0 +1,79 @@
+<style>
+  div {
+    display: inline-block;
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background-color: gray;
+    margin: 20px;
+    vertical-align: middle;
+  }
+  .red.light {
+    background-color: red;
+  }
+  .yellow.light {
+    background-color: yellow;
+  }
+  .green.light {
+    background-color: green;
+  }
+</style>
+
+<div class="red"></div>
+<div class="yellow"></div>
+<div class="green"></div>
+
+<button id="next">next</button>
+
+<script>
+
+  function sleep (time) {
+    return new Promise((resolve) => {
+      setTimeout(resolve, time)
+    })
+  }
+
+  function happen (element, eventName) {
+    return new Promise((resolve) => {
+      element.addEventListener(eventName, resolve, { once: true })
+    })
+  }
+
+  async function start () {
+    while (true) {
+      red()
+      await happen(document.getElementById('next'), 'click')
+      // await sleep(10000)
+      yellow()
+      await happen(document.getElementById('next'), 'click')
+      // await sleep(2000)
+      green()
+      await happen(document.getElementById('next'), 'click')
+      // await sleep(5000)
+    }
+  }
+
+  function red () {
+    let lights = document.getElementsByTagName('div')
+    for (let i = 0; i < lights.length; i++) {
+      lights[i].classList.remove('light')
+    }
+    document.querySelector('.red').classList.add('light')
+  }
+  function yellow () {
+    let lights = document.getElementsByTagName('div')
+    for (let i = 0; i < lights.length; i++) {
+      lights[i].classList.remove('light')
+    }
+    document.querySelector('.yellow').classList.add('light')
+  }
+  function green () {
+    let lights = document.getElementsByTagName('div')
+    for (let i = 0; i < lights.length; i++) {
+      lights[i].classList.remove('light')
+    }
+    document.querySelector('.green').classList.add('light')
+  }
+
+  start()
+</script>
