@@ -1,0 +1,180 @@
+<!-- 2. TicTacToe | 给游戏添加一个完美的AI -->
+
+<style>
+  .cell {
+    width: 100px;
+    height: 100px;
+    background-color: green;
+    display: inline-block;
+    border: 1px solid white;
+    vertical-align: middle;
+    line-height: 100px;
+    font-size: 50px;
+    text-align: center;
+    cursor: pointer;
+  }
+</style>
+
+<div id="board"></div>
+
+<script>
+  let pattern = [
+    [0, 0, 0],
+    [0, 1, 0],
+    [0, 0, 0]
+  ]
+  let color = 1
+
+  // 显示dom
+  function show () {
+    let board = document.getElementById('board')
+
+    board.innerHTML = ''
+
+    for (let i = 0; i < 3; i++) {
+      for (let j = 0; j < 3; j++) {
+        let cell = document.createElement('div')
+        cell.classList.add('cell')
+        cell.innerText = 
+          pattern[i][j] == 2 ? '⚫' :
+          pattern[i][j] == 1 ? '⚪' : ''
+        
+        cell.addEventListener('click', () => userMove(j, i))
+        
+        board.appendChild(cell)
+      }
+      board.appendChild(document.createElement('br'))
+    }
+  }
+
+  // 玩家走棋
+  function userMove (x, y) {
+    if (pattern[y][x] > 0) return
+    pattern[y][x] = color
+    if (check(pattern, color)) {
+      alert(color == 2 ? '⚫ is winner!' : '⚪ is winner!')
+    }
+    color = 3 - color
+    show()
+    computerMove()
+
+    if (willWin(pattern, color)) {
+      console.log(color == 2 ? '⚫ will win!' : '⚪ will win!')
+    }
+  }
+
+  // 电脑走棋
+  function computerMove () {
+    console.log('computerMove')
+    let choice = bestChoice(pattern, color)
+    console.log('choice', choice)
+    if (choice.point) {
+      pattern[choice.point[1]][choice.point[0]] = color
+    }
+    if (check(pattern, color)) {
+      alert(color == 2 ? '⚫ is winner!' : '⚪ is winner!')
+    }
+    color = 3 - color
+    show()
+  }
+
+  // 检查是否赢了
+  function check (pattern, color) {
+    for (let i = 0; i < 3; i++) {
+      let win = true
+      for (let j = 0; j < 3; j++) {
+        if (pattern[i][j] !== color) {
+          win = false
+        }
+      }
+      if (win) return true
+    }
+
+    for (let i = 0; i < 3; i++) {
+      let win = true
+      for (let j = 0; j < 3; j++) {
+        if (pattern[j][i] !== color) {
+          win = false
+        }
+      }
+      if (win) return true
+    }
+
+    {
+      let win = true
+      for (let j = 0; j < 3; j++) {
+        if (pattern[j][j] !== color) {
+          win = false
+        }
+      }
+      if (win) return true
+    }
+
+    {
+      let win = true
+      for (let j = 0; j < 3; j++) {
+        if (pattern[j][2 - j] !== color) {
+          win = false
+        }
+      }
+      if (win) return true
+    }
+
+    return false
+  }
+
+  function clone (pattern) {
+    return JSON.parse(JSON.stringify(pattern))
+  }
+
+  // 下一步是否要赢了
+  function willWin (pattern, color) {
+    for (let i = 0; i < 3; i++) {
+      for (let j = 0; j < 3; j++) {
+        if (pattern[i][j]) continue
+
+        let tmp = clone(pattern)
+        tmp[i][j] = color
+        if (check(tmp, color)) {
+          return [j, i]
+        }
+      }
+    }
+    return null
+  }
+
+  // 最好的选择
+  // 1 赢，0 平，-1 输
+  function bestChoice (pattern, color) {
+    let p
+    if (p = willWin(pattern, color)) { // 我们要赢，返回这个点
+      return {
+        point: p,
+        result: 1
+      }
+    }
+    let result = -2
+    let point = null
+    for (let i = 0; i < 3; i++) {
+      for (let j = 0; j < 3; j++) {
+        if (pattern[i][j]) continue
+
+        let tmp = clone(pattern)
+        tmp[i][j] = color // 走棋
+        let r = bestChoice(tmp, 3 - color).result // 对方最好的选择
+
+        if (-r > result) { // 对方最好的结果时，我们的结果是-r
+          result = -r, // 取对我们最好的点
+          point = [j, i]
+        }
+      }
+    }
+    return {
+      point,
+      result: point ? result : 0 // 我们最好的结果
+    }
+  }
+
+  show()
+  console.log(bestChoice(pattern, color))
+</script>
