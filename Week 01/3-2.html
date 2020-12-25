@@ -1,0 +1,71 @@
+<!-- 红绿灯 Promise -->
+<style>
+  div {
+    display: inline-block;
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background-color: gray;
+    margin: 20px;
+    vertical-align: middle;
+  }
+  .red.light {
+    background-color: red;
+  }
+  .yellow.light {
+    background-color: yellow;
+  }
+  .green.light {
+    background-color: green;
+  }
+</style>
+
+<div class="red"></div>
+<div class="yellow"></div>
+<div class="green"></div>
+
+<script>
+
+  function sleep (time) {
+    return new Promise((resolve) => {
+      setTimeout(resolve, time)
+    })
+  }
+
+  function go () {
+    red()
+    sleep(10000).then(() => {
+      yellow()
+      return sleep(2000)
+    }).then(() => {
+      green()
+      return sleep(5000)
+    }).then(() => {
+      go()
+    })
+  }
+
+  function red () {
+    let lights = document.getElementsByTagName('div')
+    for (let i = 0; i < lights.length; i++) {
+      lights[i].classList.remove('light')
+    }
+    document.querySelector('.red').classList.add('light')
+  }
+  function yellow () {
+    let lights = document.getElementsByTagName('div')
+    for (let i = 0; i < lights.length; i++) {
+      lights[i].classList.remove('light')
+    }
+    document.querySelector('.yellow').classList.add('light')
+  }
+  function green () {
+    let lights = document.getElementsByTagName('div')
+    for (let i = 0; i < lights.length; i++) {
+      lights[i].classList.remove('light')
+    }
+    document.querySelector('.green').classList.add('light')
+  }
+
+  go()
+</script>

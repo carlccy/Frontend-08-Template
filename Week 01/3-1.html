@@ -1,3 +1,4 @@
+<!-- 红绿灯 callback -->
 <style>
   div {
     display: inline-block;
@@ -23,34 +24,19 @@
 <div class="yellow"></div>
 <div class="green"></div>
 
-<button id="next">next</button>
-
 <script>
 
-  function sleep (time) {
-    return new Promise((resolve) => {
-      setTimeout(resolve, time)
-    })
-  }
-
-  function happen (element, eventName) {
-    return new Promise((resolve) => {
-      element.addEventListener(eventName, resolve, { once: true })
-    })
-  }
-
-  async function start () {
-    while (true) {
-      red()
-      await happen(document.getElementById('next'), 'click')
-      // await sleep(10000)
+  function go () {
+    red()
+    setTimeout(() => {
       yellow()
-      await happen(document.getElementById('next'), 'click')
-      // await sleep(2000)
-      green()
-      await happen(document.getElementById('next'), 'click')
-      // await sleep(5000)
-    }
+      setTimeout(() => {
+        green()
+        setTimeout(() => {
+          go()
+        }, 5000)
+      }, 2000)
+    }, 10000)
   }
 
   function red () {
@@ -75,5 +61,5 @@
     document.querySelector('.green').classList.add('light')
   }
 
-  start()
+  go()
 </script>
