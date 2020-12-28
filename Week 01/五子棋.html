@@ -89,14 +89,14 @@
   function userMove (x, y) {
     if (pattern[y][x] > 0) return
     pattern[y][x] = color
-    if (check(pattern, color)) {
+    if (check(pattern, color, pieceSize)) {
       alert(color == 2 ? '⚫ is winner!' : '⚪ is winner!')
     }
     color = 3 - color
     show()
-    // computerMove()
+    computerMove()
 
-    if (willWin(pattern, color)) {
+    if (willWin(pattern, color, pieceSize)) {
       console.log(color == 2 ? '⚫ will win!' : '⚪ will win!')
     }
   }
@@ -104,13 +104,12 @@
   // 电脑走棋 (未实现最好落子)
   function computerMove () {
     console.log('computerMove')
-    let choice = bestChoice(pattern, color)
-    max = 1000
+    let choice = bestChoice(pattern, color, pieceSize)
     console.log('choice', choice)
     if (choice.point) {
       pattern[choice.point[1]][choice.point[0]] = color
     }
-    if (check(pattern, color)) {
+    if (check(pattern, color, pieceSize)) {
       alert(color == 2 ? '⚫ is winner!' : '⚪ is winner!')
     }
     color = 3 - color
@@ -118,7 +117,7 @@
   }
 
   // 检查是否赢了
-  function check (pattern, color) {
+  function check (pattern, color, size) {
     // console.log('check')
     for (let i = 0; i < boardSize; i++) {
       let win = false
@@ -127,7 +126,7 @@
         if (pattern[i][j] == color) {
           num++
           // console.log('横', num)
-          if (num == pieceSize) {
+          if (num == size) {
             return true
           }
         } else {
@@ -144,7 +143,7 @@
         if (pattern[j][i] == color) {
           num++
           // console.log('竖', num)
-          if (num == pieceSize) {
+          if (num == size) {
             return true
           }
         } else {
@@ -154,9 +153,9 @@
       if (win) return true
     }
 
-    for (let i = 0; i < boardSize - pieceSize; i++) {
-      for (let j = 0; j < boardSize - pieceSize; j++) {
-        if (check2(pattern, i, j)) return true
+    for (let i = 0; i < boardSize - size; i++) {
+      for (let j = 0; j < boardSize - size; j++) {
+        if (check2(pattern, i, j, size)) return true
       }
     }
 
@@ -164,10 +163,10 @@
   }
 
   // 检查斜赢
-  function check2 (pattern, x, y) {
+  function check2 (pattern, x, y, size) {
     {
       let win = true
-      for (let k = 0; k < pieceSize; k++) {
+      for (let k = 0; k < size; k++) {
         if (pattern[k + x][k + y] !== color) {
           win = false
           break
@@ -178,7 +177,7 @@
 
     {
       let win = true
-      for (let k = 0; k < pieceSize; k++) {
+      for (let k = 0; k < size; k++) {
         if (pattern[k + x][4 - k + y] !== color) {
           win = false
           break
@@ -193,14 +192,14 @@
   }
 
   // 下一步是否要赢了
-  function willWin (pattern, color) {
+  function willWin (pattern, color, size) {
     for (let i = 0; i < boardSize; i++) {
       for (let j = 0; j < boardSize; j++) {
         if (pattern[i][j]) continue
 
         let tmp = clone(pattern)
         tmp[i][j] = color
-        if (check(tmp, color)) {
+        if (check(tmp, color, size)) {
           return [j, i]
         }
       }
@@ -210,38 +209,20 @@
 
   // 最好的选择
   // 1 赢，0 平，-1 输
-  let max = 1000 // 递归深度
-  function bestChoice (pattern, color) {
-    max--
-    // console.log('bestChoice', max)
+  function bestChoice (pattern, color, size) {
     let p
-    if (p = willWin(pattern, color)) { // 我们要赢，返回这个点
+    p = willWin(pattern, color, size)
+    // 如果自己要赢走这步，否则 如果对方要赢走这步堵住
+    p = p ? p : willWin(pattern, 3 - color, size)
+
+    if (p) {
       return {
         point: p,
-        result: 1
+        result: 1 // 我们最好的结果
       }
-    }
-    let result = -2
-    let point = null
-    outer:for (let i = 0; i < boardSize; i++) {
-      for (let j = 0; j < boardSize; j++) {
-        if (pattern[i][j]) continue
-
-        let tmp = clone(pattern)
-        tmp[i][j] = color // 走棋
-        if (max > 0) { // 递归深度
-          let r = bestChoice(tmp, 3 - color).result // 对方最好的选择
-          if (-r > result) { // 对方最好的结果时，我们的结果是-r
-            result = -r, // 取对我们最好的点
-            point = [j, i]
-          }
-          if (result == 1) break outer // 剪枝
-        }
-      }
-    }
-    return {
-      point,
-      result: point ? result : 0 // 我们最好的结果
+    } else {
+      // 降级4连
+      return this.bestChoice(pattern, color, size - 1);
     }
   }
 
