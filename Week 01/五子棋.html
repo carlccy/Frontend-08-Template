@@ -119,38 +119,53 @@
   // 检查是否赢了
   function check (pattern, color, size) {
     // console.log('check')
+    // console.log('横', num)
     for (let i = 0; i < boardSize; i++) {
-      let win = false
-      let num = 0
+      let data = []
       for (let j = 0; j < boardSize; j++) {
         if (pattern[i][j] == color) {
-          num++
-          // console.log('横', num)
-          if (num == size) {
+          data.push(j)
+          if (
+            data.length == size && // 方向子满
+            (size == pieceSize || (size != pieceSize && (
+              (pattern[i, data[0] - 1] && pattern[i, data[0] - 1] != 3 - color) ||
+              (pattern[i, data[size - 1] + 1] && pattern[i, data[size - 1] + 1] != 3 - color)
+              // pattern[i, data[0] - 1] == 0 || pattern[i, data[size - 1] + 1] == 0
+            )))
+          ) {
+            console.log('横', size)
             return true
           }
         } else {
-          num = 0
+          data = []
         }
       }
-      if (win) return true
+      // if (win) return true
     }
 
     for (let i = 0; i < boardSize; i++) {
-      let win = false
-      let num = 0
+      // let win = false
+      // console.log('竖', num)
+      let data = []
       for (let j = 0; j < boardSize; j++) {
         if (pattern[j][i] == color) {
-          num++
-          // console.log('竖', num)
-          if (num == size) {
+          data.push(i)
+          if (
+            data.length == size &&
+            (size == pieceSize || (size != pieceSize && (
+              (pattern[j, data[0] - 1] && pattern[j, data[0] - 1] != 3 - color) ||
+              (pattern[j, data[size - 1] + 1] && pattern[j, data[size - 1] + 1] != 3 - color)
+              // pattern[j, data[0] - 1] == 0 || pattern[j, data[size - 1] + 1] == 0
+            )))
+          ) {
+            console.log('竖', size)
             return true
           }
         } else {
-          num = 0
+          data = []
         }
       }
-      if (win) return true
+      // if (win) return true
     }
 
     for (let i = 0; i < boardSize - size; i++) {
@@ -167,24 +182,45 @@
     {
       let win = true
       for (let k = 0; k < size; k++) {
-        if (pattern[k + x][k + y] !== color) {
+        if (pattern[x + k][y + k] !== color) {
           win = false
           break
         }
       }
-      if (win) return true
+      if (
+        win && 
+        (size == pieceSize || (size != pieceSize && (
+          (pattern[x - 1, y - 1] && pattern[x - 1, y - 1] != 3 - color) ||
+          (pattern[x + size, y + size] && pattern[x + size, y + size] != 3 - color)
+          // pattern[x - 1, y - 1] == 0 || pattern[x + size, y + size] == 0
+        )))
+      ) {
+        console.log('捺', size)
+        return true
+      }
     }
 
     {
       let win = true
       for (let k = 0; k < size; k++) {
-        if (pattern[k + x][4 - k + y] !== color) {
+        if (pattern[x + k][y + size - k] !== color) {
           win = false
           break
         }
       }
-      if (win) return true
+      if (
+        win && 
+        (size == pieceSize || (size != pieceSize && (
+          (pattern[x - 1, y + size] && pattern[x - 1, y + size] != 3 - color) ||
+          (pattern[x + size, y - 1] && pattern[x + size, y - 1] != 3 - color)
+          // pattern[x - 1, y + size] == 0 || pattern[x + size, y - 1] == 0
+        )))
+      ) {
+        console.log('撇', size)
+        return true
+      }
     }
+
   }
 
   function clone (pattern) {
