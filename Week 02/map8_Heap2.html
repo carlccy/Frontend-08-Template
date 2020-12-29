@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>二叉堆寻路</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+    }
+    #container {
+      width: 701px;
+      line-height: 5px;
+    }
+    .cell {
+      margin: 1px;
+      width: 5px;
+      height: 5px;
+      display: inline-block;
+      background-color: #aaa;
+      vertical-align: top;
+    }
+  </style>
+</head>
+<body>
+  <div id="container"></div>
+  <button onclick="localStorage.setItem('map', JSON.stringify(map))">save</button>
+  <button onclick="localStorage.setItem('map', JSON.stringify(Array(10000).fill(0)))">clear</button>
+
+  <script>
+
+    let container = document.getElementById('container')
+    let map = localStorage.getItem('map')
+              ? JSON.parse(localStorage.getItem('map'))
+              : Array(10000).fill(0)
+
+    for (let y = 0; y < 100; y++) {
+      for (let x = 0; x < 100; x++) {
+        let cell = document.createElement('div')
+        cell.classList.add('cell')
+
+        if (map[100 * y + x] == 1) {
+          cell.style.backgroundColor = 'black'
+        }
+
+        cell.addEventListener('mouseover', () => {
+          if (mousedown) {
+            if (clear) {
+              cell.style.backgroundColor = ''
+              map[100 * y + x] = 0
+            } else {
+              cell.style.backgroundColor = 'black'
+              map[100 * y + x] = 1
+            }
+          }
+        })
+        container.appendChild(cell)
+      }
+    }
+
+    let mousedown = false
+    let clear = false
+    document.addEventListener('mousedown', e => {
+      mousedown = true
+      clear = (e.which === 3)
+    })
+    document.addEventListener('mouseup', () => mousedown = false)
+    document.addEventListener('contextmenu', e => e.preventDefault())
+    
+    function sleep (time) {
+      return new Promise(function (resolve) {
+        setTimeout(resolve, time)
+      })
+    }
+    
+    let st
+    let et
+    
+    async function findPath (map, start, end) {
+      st = Date.now()
+      let table = Object.create(map)
+      let queue = new MinHeap([start], (a, b) => distance(a) - distance(b))
+
+      async function insert (x, y, pre) {
+        if (x < 0 || x >= 100 || y < 0 || y >= 100) return
+        if (table[y * 100 + x]) return
+
+        await sleep(30)
+        container.children[y * 100 + x].style.backgroundColor = 'lightgreen'
+        table[y * 100 + x] = pre
+        // console.log(pre)
+        queue.insert([x, y])
+      }
+
+      function distance (point) {
+        return (point[0] - end[0]) ** 2 + (point[1] - end[1]) ** 2
+      }
+
+      while (queue.size()) {
+        let [x, y] = queue.extract()
+        // console.log([x, y])
+
+        if (x === end[0] && y === end[1]) { 
+          et = Date.now()
+          let path = []
+          // console.log(table)
+
+
+          while (x != start[0] || y != start[1]) {
+            // path.push([x, y]) 放这里有问题
+            [x, y] = table[y * 100 + x]
+            path.push([x, y])
+            await sleep(30)
+            container.children[y * 100 + x].style.backgroundColor = 'red'
+          }
+          console.log(path)
+          console.log('Time', et - st)
+          return path
+        }
+
+        await insert(x - 1, y, [x, y])
+        await insert(x, y - 1, [x, y])
+        await insert(x + 1, y, [x, y])
+        await insert(x, y + 1, [x, y])
+
+        await insert(x - 1, y - 1, [x, y])
+        await insert(x + 1, y - 1, [x, y])
+        await insert(x + 1, y + 1, [x, y])
+        await insert(x - 1, y + 1, [x, y])
+      }
+
+      return null
+    }
+
+    // 换位
+    function swap(array, a, b) {
+      [array[a], array[b]] = [array[b], array[a]];
+    }
+    function reverseCompare(compareFn) {
+      return (a, b) => compareFn(b, a);
+    }
+    // 最小二叉堆
+    class MinHeap {
+      constructor(data, compareFn) {
+        this.compareFn = compareFn || ((a, b) => a - b);
+        this.heap = data;
+      }
+      getLeftIndex(index) {
+        return 2 * index + 1;
+      }
+      getRightIndex(index) {
+        return 2 * index + 2;
+      }
+      getParentIndex(index) {
+        if (index === 0) {
+          return undefined;
+        }
+        return Math.floor((index - 1) / 2);
+      }
+      size() {
+        return this.heap.length;
+      }
+      isEmpty() {
+        return this.size() <= 0;
+      }
+      clear() {
+        this.heap = [];
+      }
+      findMinimum() {
+        return this.isEmpty() ? undefined : this.heap[0];
+      }
+      insert(value) {
+        if (value != null) {
+          this.heap.push(value);
+          const index = this.heap.length - 1;
+          this.siftUp(index);
+          return true;
+        }
+        return false;
+      }
+      siftUp(index) {
+        let parent = this.getParentIndex(index);
+        while (
+          index > 0
+          && this.compareFn(this.heap[parent], this.heap[index]) > 0
+        ) {
+          swap(this.heap, parent, index);
+          index = parent;
+          parent = this.getParentIndex(index);
+        }
+      }
+      extract() {
+        if (this.isEmpty()) {
+          return undefined;
+        }
+        if (this.size() == 1) {
+          return this.heap.shift();
+        }
+        const removedValue = this.heap[0];
+        this.heap[0] = this.heap.pop();
+        this.siftDown(0);
+        return removedValue;
+      }
+      siftDown(index) {
+        let element = index;
+        const left = this.getLeftIndex(index);
+        const right = this.getRightIndex(index);
+        const size = this.size();
+        if (
+          left < size
+          && this.compareFn(this.heap[element], this.heap[left]) > 0
+        ) {
+          element = left;
+        } else if (
+          right < size
+          && this.compareFn(this.heap[element], this.heap[right]) > 0
+        ) {
+          element = right;
+        }
+        if (index !== element) {
+          swap(this.heap, index, element);
+          this.siftDown(element);
+        }
+      }
+      heapify(array) {
+        if (array) {
+          this.heap = array;
+        }
+        const maxIndex = Math.floor(this.size() / 2) - 1;
+        for (let i = 0; i <= maxIndex; i++) {
+          this.siftDown(i);
+        }
+        return this.heap;
+      }
+      getAsArray() {
+        return this.heap;
+      }
+    }
+  </script>
+
+</body>
+</html>
