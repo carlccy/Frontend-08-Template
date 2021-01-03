@@ -1,0 +1,158 @@
+<script>
+  const regexp = /([0-9\.]+)|([ \t]+)|([\r\n]+)|(\*)|(\/)|(\+)|(\-)/g
+  const dictionary = ['Number', 'Whitespace', 'LineTerminator', '*', '/', '+', '-']
+
+  // 词法分析
+  function* tokenize (source) {
+    let result = null
+    let lastIndex = 0
+    while (true) {
+      lastIndex = regexp.lastIndex
+      result = regexp.exec(source) // 扫描表达式
+
+      if (!result) break
+      // 如果匹配前进的长度不一样，说明有的字符串不认识
+      if (regexp.lastIndex - lastIndex > result[0].length) break
+
+      let token = {
+        type: null,
+        value: null
+      }
+
+      for (let i = 0; i <= dictionary.length; i++) {
+        if (result[i]) {
+          token.type = dictionary[i - 1]
+        }
+      }
+      token.value = result[0]
+      yield token
+    }
+    yield {
+      type: 'EOF'
+    }
+  }
+
+  // for (let token of tokenize('1024 + 10 * 25')) {
+  //   console.log(token)
+  // }
+
+  let source = []
+
+  for (let token of tokenize('1 + 2 * 3')) {
+    if (token.type !== 'Whitespace' && token.type !== 'LineTerminator') {
+      source.push(token)
+    }
+  }
+
+  // console.log(source)
+  
+  // 语法分析
+  function Expression (tokens) {
+    // 如果结束了，合并成单根
+    if (source[0].type === 'AdditiveExpression' && source[1] && source[1].type === 'EOF') {
+      let node = {
+        type: 'Expression',
+        children: [source.shift(), source.shift()]
+      }
+      source.unshift(node)
+      return node
+    }
+    AdditiveExpression(source)
+    return Expression(source)
+  }
+
+  // 加法
+  function AdditiveExpression (source) {
+    if (source[0].type === 'Number') {
+      let node = {
+        type: 'AdditiveExpression',
+        children: [source[0]]
+      }
+      source[0] = node
+      return AdditiveExpression(source)
+    }
+    if (source[0].type === 'AdditiveExpression' && source[1] && source[1].type === '+') {
+      let node = {
+        type: 'AdditiveExpression',
+        operator: '+',
+        children: []
+      }
+      // 前三项组成一个乘法表达式
+      node.children.push(source.shift())
+      node.children.push(source.shift())
+      MultiplicativeExpression(source) // 第三项是非终结符，处理掉
+      node.children.push(source.shift())
+      // 3 和 1，放在第一项
+      source.unshift(node)
+      return AdditiveExpression(source)
+    }
+    if (source[0].type === 'AdditiveExpression' && source[1] && source[1].type === '-') {
+      let node = {
+        type: 'AdditiveExpression',
+        operator: '-',
+        children: []
+      }
+      // 前三项组成一个乘法表达式
+      node.children.push(source.shift())
+      node.children.push(source.shift())
+      MultiplicativeExpression(source) // 第三项是非终结符，处理掉 ！！！
+      node.children.push(source.shift())
+      // 3 和 1，放在第一项
+      source.unshift(node)
+      return AdditiveExpression(source)
+    }
+    if (source[0].type === 'AdditiveExpression') {
+      return source[0]
+    }
+    // 如果再出现Number 或者 MultiplicativeExpression没有完整的执行完('*'或'/')
+    MultiplicativeExpression(source)
+    return AdditiveExpression(source) // 应该不会执行
+  }
+
+  // 乘法
+  // 终结符判断 1. 数字 2. '*' 3. '/'
+  function MultiplicativeExpression (source) {
+    if (source[0].type === 'Number') {
+      let node = {
+        type: 'MultiplicativeExpression',
+        children: [source[0]]
+      }
+      source[0] = node
+      return MultiplicativeExpression(source)
+    }
+    if (source[0].type === 'MultiplicativeExpression' && source[1] && source[1].type === '*') {
+      let node = {
+        type: 'MultiplicativeExpression',
+        operator: '*',
+        children: []
+      }
+      // 前三项组成一个乘法表达式
+      node.children.push(source.shift())
+      node.children.push(source.shift())
+      node.children.push(source.shift())
+      // 3 和 1，放在第一项
+      source.unshift(node)
+      return MultiplicativeExpression(source)
+    }
+    if (source[0].type === 'MultiplicativeExpression' && source[1] && source[1].type === '/') {
+      let node = {
+        type: 'MultiplicativeExpression',
+        operator: '/',
+        children: []
+      }
+      // 前三项组成一个乘法表达式
+      node.children.push(source.shift())
+      node.children.push(source.shift())
+      node.children.push(source.shift())
+      // 3 和 1，放在第一项
+      source.unshift(node)
+      return MultiplicativeExpression(source)
+    }
+    if (source[0].type === 'MultiplicativeExpression') {
+      return source[0]
+    }
+    return MultiplicativeExpression(source) // 应该不会执行
+  }
+  
+  console.log(Expression(source))
+</script>

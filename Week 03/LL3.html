@@ -1,0 +1,63 @@
+<script>
+  const regexp = /([0-9\.]+)|([ \t]+)|([\r\n]+)|(\*)|(\/)|(\+)|(\-)/g
+  const dictionary = ['Number', 'Whitespace', 'LineTerminator', '*', '/', '+', '-']
+
+  // 词法分析
+  function* tokenize (source) {
+    let result = null
+    let lastIndex = 0
+    while (true) {
+      lastIndex = regexp.lastIndex
+      result = regexp.exec(source) // 扫描表达式
+
+      if (!result) break
+      // 如果匹配前进的长度不一样，说明有的字符串不认识
+      if (regexp.lastIndex - lastIndex > result[0].length) break
+
+      let token = {
+        type: null,
+        value: null
+      }
+
+      for (let i = 0; i <= dictionary.length; i++) {
+        if (result[i]) {
+          token.type = dictionary[i - 1]
+        }
+      }
+      token.value = result[0]
+      yield token
+    }
+    yield {
+      type: 'EOF'
+    }
+  }
+
+  // for (let token of tokenize('1024 + 10 * 25')) {
+  //   console.log(token)
+  // }
+
+  let source = []
+
+  for (let token of tokenize('1024 + 10 * 25')) {
+    if (token.type !== 'Whitespace' && token.type !== 'LineTerminator') {
+      source.push(token)
+    }
+  }
+
+  // 语法分析
+  function Expression (tokens) {
+
+  }
+
+  // 加法
+  function AdditiveExpression (source) {
+
+  }
+
+  // 乘法
+  function MultiplicativeExpression (source) {
+    console.log(source)
+  }
+  
+  MultiplicativeExpression(source)
+</script>
