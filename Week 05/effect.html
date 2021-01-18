@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Effect</title>
+</head>
+<body>
+    <script>
+        let callbacks = new Map() // 依赖的回调 (绑定的操作)
+        let reactivities = new Map()
+
+        let usedReactivities = [] // 采集对象调用过的属性 [[obj, prop]]：(依赖收集器)
+
+        let object = {
+            // a: 1,
+            a: { b: 3 },
+            b: 2
+        }
+
+        let po = reactive(object)
+
+        effect(() => {
+            console.log('effect a.c', po.a.b)
+            console.log('effect b', po.b)
+        })
+
+        function effect (callback) {            
+            // 当前callback所包含的依赖 [obj, prop]
+            // 这些依赖变化时，都可以触发callback (双向绑定原理)
+            usedReactivities = []
+            // 执行callback以收集依赖
+            callback()
+            console.log(usedReactivities)
+
+            // 给依赖加入绑定的回调 （添加绑定）
+            for (let reactivity of usedReactivities) {
+                // 是否有对象obj
+                if (!callbacks.has(reactivity[0])) {
+                    callbacks.set(reactivity[0], new Map())
+                }
+                // 是否有属性prop
+                if (!callbacks.get(reactivity[0]).has(reactivity[1])) {
+                    // 属性的值为[]
+                    callbacks.get(reactivity[0]).set(reactivity[1], [])
+                }
+                // 对象的属性存入绑定的callback
+                callbacks.get(reactivity[0]).get(reactivity[1]).push(callback)
+            }
+
+        }
+
+        function reactive (object) {
+            if (reactivities.has(object)) {
+                return reactivities.get(object)
+            }
+
+            let proxy = new Proxy(object, {
+                set (obj, prop, val) {
+                    obj[prop] = val
+                    // console.log(obj, prop, val)
+                    // 依赖变化时，触发绑定的回调
+                    if (callbacks.get(obj)) // 依赖中有该对象
+                        if (callbacks.get(obj).get(prop)) // 有该属性
+                            for (let callback of callbacks.get(obj).get(prop)) { // 有这些回调（绑定）
+                                callback() // 触发它们 （按需触发）
+                            }
+                    return obj[prop]
+                },
+                get (obj, prop) {
+                    // console.log(obj, prop)
+                    // 依赖收集
+                    usedReactivities.push([obj, prop])
+
+                    if (typeof obj[prop] === 'object') {
+                        return reactive(obj[prop]) // new Proxy会返回新的proxy，所以需要缓存一下
+                    }
+
+                    return obj[prop]
+                }
+            })
+
+            reactivities.set(object, proxy) // 缓存proxy
+
+            return proxy
+        }
+    </script>
+</body>
+</html>
