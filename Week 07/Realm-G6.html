@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Realm</title>
+    <!-- <title>紧凑树</title> -->
+    <style>::-webkit-scrollbar{display:none;}html,body{overflow:hidden;margin:0;}</style>
+</head>
+<body>
+<div id="mountNode"></div>
+<script>/*Fixing iframe window.innerHeight 0 issue in Safari*/document.body.clientHeight;</script>
+<script src="https://gw.alipayobjects.com/os/antv/pkg/_antv.g6-3.1.1/build/g6.js"></script>
+<script src="https://gw.alipayobjects.com/os/antv/assets/lib/jquery-3.2.1.min.js"></script>
+<script src="https://gw.alipayobjects.com/os/antv/pkg/_antv.hierarchy-0.5.0/build/hierarchy.js"></script>
+<script>
+
+  function getAllObject() {
+    const names = Object.getOwnPropertyNames(window);
+    // console.log(names);
+    const map = new Map();
+    for (let name of names) {
+      if (window[name]?.prototype) {
+        // 有原型
+        const prop = window[name].prototype.__proto__;
+
+        if (prop) {
+          if (!map.has(prop)) {
+            map.set(prop, []);
+          }
+          if (!map.get(prop).includes(window[name])) {
+            map.get(prop).push(window[name]);
+          }
+        }
+      }
+    }
+    // console.log(map);
+    function getChildren(root) {
+      if (map.has(root)) {
+        return map
+          .get(root)
+          .map((r) => ({
+            id: r.name,
+            label: r.name,
+            children: getChildren(r.prototype),
+          }))
+          .filter((r) => r.id);
+      }
+      return [];
+    }
+
+    return {
+      id: "Object",
+      children: getChildren(Object.prototype),
+    };
+  }
+
+  function renderG6 (data) {
+    var graph = new G6.TreeGraph({
+      container: 'mountNode',
+      width: window.innerWidth,
+      height: window.innerHeight,
+      pixelRatio: 2,
+      modes: {
+        default: [{
+          type: 'collapse-expand',
+          onChange: function onChange(item, collapsed) {
+            var data = item.get('model').data;
+            data.collapsed = collapsed;
+            return true;
+          }
+      }, 'drag-canvas', 'zoom-canvas']
+      },
+      defaultNode: {
+        size: 16,
+        anchorPoints: [[0, 0.5], [1, 0.5]],
+        style: {
+          fill: '#40a9ff',
+          stroke: '#096dd9'
+        }
+      },
+      defaultEdge: {
+        shape: 'cubic-horizontal',
+        style: {
+          stroke: '#A3B1BF'
+        }
+      },
+      layout: {
+        type: 'compactBox',
+        direction: 'LR',
+        getId: function getId(d) {
+          return d.id;
+        },
+        getHeight: function getHeight() {
+          return 16;
+        },
+        getWidth: function getWidth() {
+          return 16;
+        },
+        getVGap: function getVGap() {
+          return 10;
+        },
+        getHGap: function getHGap() {
+          return 100;
+        }
+      }
+    });
+
+    graph.node(function(node) {
+      return {
+        size: 26,
+        style: {
+          fill: '#40a9ff',
+          stroke: '#096dd9'
+        },
+        label: node.id,
+        labelCfg: {
+          position: node.children && node.children.length > 0 ? 'left' : 'right'
+        }
+      };
+    });
+
+    graph.data(data);
+    graph.render();
+    graph.fitView();
+  }
+
+  const objects = getAllObject();
+  // console.log(objects);
+
+  renderG6(objects)
+</script>
+</body>
+</html>
